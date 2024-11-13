@@ -19,12 +19,13 @@ export interface Address {
 export interface Restaurant {
   id: string;
   name: string;
-  image: string;
-  cuisine: string;
-  rating: number;
-  deliveryTime: string;
-  deliveryFee: number;
-  featured: boolean;
+  image_url?: string;
+  cuisine_type?: string;
+  rating?: number;
+  delivery_time?: string;
+  delivery_fee?: number;
+  is_featured?: boolean;
+  created_at?: string;
 }
 
 export interface MenuItem {

@@ -1,15 +1,15 @@
 import React from 'react';
 import { User, MapPin, CreditCard, Settings, LogOut } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStore } from '../stores/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 
 export const Account: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
 
@@ -17,6 +17,9 @@ export const Account: React.FC = () => {
     navigate('/login');
     return null;
   }
+
+  const userMetadata = user.user_metadata;
+  const fullName = userMetadata?.full_name || user.email?.split('@')[0] || 'User';
 
   const menuItems = [
     { icon: User, label: 'Personal Information', onClick: () => {} },
@@ -31,11 +34,11 @@ export const Account: React.FC = () => {
         <div className="flex items-center">
           <div className="w-16 h-16 bg-[#f27f0c] rounded-full flex items-center justify-center">
             <span className="text-2xl text-white font-semibold">
-              {user.name.charAt(0)}
+              {fullName.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="ml-4">
-            <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{fullName}</h2>
             <p className="text-gray-600">{user.email}</p>
           </div>
         </div>

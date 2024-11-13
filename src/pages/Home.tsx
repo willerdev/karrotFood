@@ -1,23 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Search, ShoppingBag, User } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { restaurants, cuisineCategories } from '../data/mockData';
+import { Link } from 'react-router-dom';
 import { RestaurantCard } from '../components/RestaurantCard';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
+import { useAuthStore } from '../stores/useAuthStore';
+import { useRestaurantStore } from '../stores/useRestaurantStore';
+import { useCategoryStore } from '../stores/useCategoryStore';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ErrorMessage } from '../components/ErrorMessage';
 
 export const Home: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
-  const { items, total } = useCart();
-  const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { 
+    restaurants, 
+    isLoading: restaurantsLoading, 
+    error: restaurantsError,
+    fetchRestaurants 
+  } = useRestaurantStore();
+  const { 
+    categories, 
+    isLoading: categoriesLoading, 
+    error: categoriesError,
+    fetchCategories 
+  } = useCategoryStore();
 
-  const filteredRestaurants = restaurants.filter(restaurant =>
-    restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    fetchRestaurants();
+    fetchCategories();
+  }, [fetchRestaurants, fetchCategories]);
+
+  if (restaurantsLoading || categoriesLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (restaurantsError || categoriesError) {
+    return <ErrorMessage message="Failed to load content. Please try again later." />;
+  }
+
+  const featuredRestaurants = restaurants.filter(restaurant => restaurant.featured);
+
+  // console.log('Featured Restaurants:', featuredRestaurants.map(r => r.id));
+  // console.log('All Restaurants:', restaurants.map(r => r.id));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -31,9 +55,9 @@ export const Home: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
+              {user ? (
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Hello, {user.name}</span>
+                  <span className="text-sm text-gray-600">Hello, {user.email}</span>
                   <User className="w-5 h-5 text-gray-600" />
                 </div>
               ) : (
@@ -41,15 +65,6 @@ export const Home: React.FC = () => {
                   <Button variant="outline" size="sm">Sign In</Button>
                 </Link>
               )}
-              
-              <div className="relative">
-                <ShoppingBag className="w-6 h-6 text-gray-600" />
-                {items.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[#f27f0c] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    {items.length}
-                  </span>
-                )}
-              </div>
             </div>
           </div>
         </div>
@@ -69,26 +84,25 @@ export const Home: React.FC = () => {
             <Input
               type="text"
               placeholder="Search for restaurants or cuisines..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
               className="text-lg"
               icon={<Search className="w-5 h-5 text-gray-400" />}
             />
           </div>
         </div>
 
-        {/* Cuisine Categories */}
+        {/* Categories */}
         <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Browse by Cuisine</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-            {cuisineCategories.map((category) => (
-              <button
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Browse by Category</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {categories.map((category) => (
+              <Link
                 key={category.id}
+                to={`/categories/${category.id}`}
                 className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
                 <span className="text-3xl mb-2">{category.icon}</span>
                 <span className="text-sm font-medium text-gray-700">{category.name}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -97,14 +111,15 @@ export const Home: React.FC = () => {
         <div className="mb-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Featured Restaurants</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRestaurants
-              .filter(restaurant => restaurant.featured)
-              .map(restaurant => (
+            {featuredRestaurants.map((restaurant) => {
+
+              return (
                 <RestaurantCard
                   key={restaurant.id}
                   restaurant={restaurant}
                 />
-              ))}
+              );
+            })}
           </div>
         </div>
 
@@ -112,50 +127,18 @@ export const Home: React.FC = () => {
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">All Restaurants</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRestaurants.map(restaurant => (
-              <RestaurantCard
-                key={restaurant.id}
-                restaurant={restaurant}
-              />
-            ))}
+            {restaurants.map((restaurant) => {
+
+              return (
+                <RestaurantCard
+                  key={restaurant.id}
+                  restaurant={restaurant}
+                />
+              );
+            })}
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t mt-16 hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">About karrotFood</h3>
-              <p className="text-gray-600">
-                Connecting you with the best restaurants in your area.
-                Fast delivery, great food, and excellent service.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h3>
-              <ul className="space-y-2">
-                <li><Link to="/" className="text-gray-600 hover:text-[#f27f0c]">Home</Link></li>
-                <li><Link to="/explore" className="text-gray-600 hover:text-[#f27f0c]">Restaurants</Link></li>
-                <li><Link to="/orders" className="text-gray-600 hover:text-[#f27f0c]">Orders</Link></li>
-                <li><Link to="/account" className="text-gray-600 hover:text-[#f27f0c]">Account</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Us</h3>
-              <ul className="space-y-2">
-                <li className="text-gray-600">Email: support@karrotfood.com</li>
-                <li className="text-gray-600">Phone: (555) 123-4567</li>
-                <li className="text-gray-600">Address: 123 Food Street, NY 10001</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t text-center text-gray-600">
-            <p>&copy; 2024 karrotFood. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

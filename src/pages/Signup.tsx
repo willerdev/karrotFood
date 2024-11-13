@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStore } from '../stores/useAuthStore';
 
 export const Signup: React.FC = () => {
   const [name, setName] = useState('');
@@ -11,12 +11,12 @@ export const Signup: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signUp } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signup(name, email, password);
+      await signUp(email, password);
       navigate('/');
     } catch (err) {
       setError('Failed to create account');

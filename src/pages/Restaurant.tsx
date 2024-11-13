@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, Minus } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import { Button } from '../components/ui/Button';
 import { menuItems } from '../data/menuData';
 
 export const Restaurant: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const [selectedCategory, setSelectedCategory] = useState(category);
+  const { addItem } = useCart();
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   const categories = [
     { id: 'main-dishes', name: 'Main Dishes' },
@@ -19,6 +24,19 @@ export const Restaurant: React.FC = () => {
 
   const categoryName = categories.find(c => c.id === selectedCategory)?.name || categories[0].name;
   const filteredItems = menuItems.filter(item => item.category === categoryName);
+
+  const handleAddToCart = (item: any) => {
+    const menuItemWithRestaurant = {
+      ...item,
+      restaurantId: item.restaurantId || "128a4226-be42-4c4f-817c-e08f6e68ff45"
+    };
+    addItem(menuItemWithRestaurant, quantity);
+    setQuantity(1);
+    setSelectedItem(null);
+    
+    // Show a toast or notification
+    alert('Item added to cart!');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,8 +71,8 @@ export const Restaurant: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map((item, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
+          {filteredItems.map((item) => (
+            <div key={item.product_name} className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="relative h-48">
                 <img
                   src={item.img_url}
@@ -64,14 +82,36 @@ export const Restaurant: React.FC = () => {
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-semibold text-gray-900">{item.product_name}</h3>
-                {item.description && (
-                  <p className="mt-1 text-sm text-gray-500">{item.description}</p>
-                )}
+                <p className="mt-1 text-sm text-gray-500">{item.description}</p>
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-lg font-semibold text-[#f27f0c]">{item.price}</span>
-                  <button className="px-4 py-2 bg-[#f27f0c] text-white rounded-lg hover:bg-[#e06d0b] transition-colors">
-                    Add to Cart
-                  </button>
+                  
+                  {selectedItem === item.product_name ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="p-1 rounded-full hover:bg-gray-100"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-lg font-medium">{quantity}</span>
+                        <button
+                          onClick={() => setQuantity(quantity + 1)}
+                          className="p-1 rounded-full hover:bg-gray-100"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <Button onClick={() => handleAddToCart(item)}>
+                        Add to Cart
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button onClick={() => setSelectedItem(item.product_name)}>
+                      Add to Cart
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
